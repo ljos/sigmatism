@@ -1,0 +1,11 @@
+
+.classpath
+
+.project
+
+*.prefs
+
+*.fasl
+
+bin/*
+*.log
