@@ -145,7 +145,7 @@ public class Sigmatism {
 	private static String nil = "\\(\\)";
 
 	private static EXPR read(String source) {
-		source = source.replaceAll("\\s", " ").trim();
+		source = source.replaceAll("\\s+", " ").trim();
 		if(source.matches(nil) || source.isEmpty()) {
 			return CONS.NIL;
 		}
