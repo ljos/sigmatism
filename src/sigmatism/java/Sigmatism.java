@@ -37,24 +37,24 @@ public class Sigmatism {
 	}
 	
 	private static EXPR assoc(SYMBOL symbol, CONS ns) throws Exception {
-		EXPR caar = ((CONS)ns.head).head;
+		EXPR caar = ((CONS)ns.car).car;
 		if(ns.equals(CONS.NIL)) {
 			throw new Exception("Symbol not in namespace.");
 		} else if (caar.equals(symbol)) {
-			EXPR cadar = ((CONS)((CONS)ns.head).rest).head;
+			EXPR cadar = ((CONS)((CONS)ns.car).cdr).car;
 			return cadar;
 		} else {
-			return assoc(symbol, (CONS)ns.rest);
+			return assoc(symbol, (CONS)ns.cdr);
 		}
 	}
 	
 	private static EXPR evcon(CONS cons, CONS ns) throws Exception {
-		EXPR caar = ((CONS)cons.head).head;
-		EXPR cadar = ((CONS)((CONS)cons.head).rest).head;
+		EXPR caar = ((CONS)cons.car).car;
+		EXPR cadar = ((CONS)((CONS)cons.car).cdr).car;
 		if(eval(caar, ns).equals(SYMBOL.T)) {
 			return eval(cadar, ns);
 		} else {
-			return evcon((CONS)cons.rest, ns);
+			return evcon((CONS)cons.cdr, ns);
 		}
 	}
 	
@@ -62,7 +62,7 @@ public class Sigmatism {
 		if (expr.equals(CONS.NIL)) {
 			return CONS.NIL;
 		} else {
-			return new CONS(eval(expr.head, ns), evlis((CONS)expr.rest, ns));
+			return new CONS(eval(expr.car, ns), evlis((CONS)expr.cdr, ns));
 		}
 	}
 	
@@ -70,7 +70,7 @@ public class Sigmatism {
 		if (x.equals(CONS.NIL)) {
 			return y;
 		} else {
-			return new CONS(x.head, append((CONS)x.rest, y));
+			return new CONS(x.car, append((CONS)x.cdr, y));
 		}
 	}
 	
@@ -78,8 +78,8 @@ public class Sigmatism {
 		if (x.equals(CONS.NIL) && y.equals(CONS.NIL)) {
 			return CONS.NIL;
 		} else {
-			EXPR list = new CONS(x.head, new CONS(y.head, CONS.NIL));
-			return new CONS(list, pair((CONS)x.rest, (CONS)y.rest));
+			EXPR list = new CONS(x.car, new CONS(y.car, CONS.NIL));
+			return new CONS(list, pair((CONS)x.cdr, (CONS)y.cdr));
 		}
 	}
 	
@@ -96,10 +96,10 @@ public class Sigmatism {
 			return assoc(e, ns);
 		} else if (expr instanceof CONS) {
 			CONS cons = (CONS) expr;
-			if (cons.head instanceof SYMBOL) {
-				String symbol = cons.head.toString();
-				EXPR cadr = ((CONS)cons.rest).head;
-				EXPR caddr = ((CONS)((CONS)cons.rest).rest).head;
+			if (cons.car instanceof SYMBOL) {
+				String symbol = cons.car.toString();
+				EXPR cadr = ((CONS)cons.cdr).car;
+				EXPR caddr = ((CONS)((CONS)cons.cdr).cdr).car;
 				switch (symbol) {
 				case "quote":
 					return cadr;
@@ -110,27 +110,27 @@ public class Sigmatism {
 					return eval(cadr, ns).equals(eval(caddr, ns)) ? 
 							SYMBOL.T : CONS.NIL;
 				case "car":
-					return ((CONS)eval(cadr, ns)).head;
+					return ((CONS)eval(cadr, ns)).car;
 				case "cdr":
-					return ((CONS)eval(cadr, ns)).rest;
+					return ((CONS)eval(cadr, ns)).cdr;
 				case "cons":
 					return new CONS(eval(cadr, ns), eval(caddr,ns));
 				case "cond":
-					return evcon((CONS)cons.rest, ns);
+					return evcon((CONS)cons.cdr, ns);
 				default:
-					EXPR f = assoc((SYMBOL)cons.head, ns);
-					return eval(new CONS(f, cons.rest), ns);
+					EXPR f = assoc((SYMBOL)cons.car, ns);
+					return eval(new CONS(f, cons.cdr), ns);
 				}
 			} else {
-				EXPR caar = ((SYMBOL)((CONS)cons.head).head);
-				EXPR caddar = ((CONS)((CONS)((CONS)cons.head).rest).rest).head;
-				EXPR cadar = ((CONS)((CONS)cons.head).rest).head;
+				EXPR caar = ((SYMBOL)((CONS)cons.car).car);
+				EXPR caddar = ((CONS)((CONS)((CONS)cons.car).cdr).cdr).car;
+				EXPR cadar = ((CONS)((CONS)cons.car).cdr).car;
 				
 				if (caar.equals(SYMBOL.label)) {
-					CONS list = new CONS(cadar, new CONS(cons.head, CONS.NIL)); 
-					return eval(new CONS(caddar, cons.rest), new CONS(list, ns));
+					CONS list = new CONS(cadar, new CONS(cons.car, CONS.NIL)); 
+					return eval(new CONS(caddar, cons.cdr), new CONS(list, ns));
 				} else if (caar.equals(SYMBOL.lambda)) {
-					CONS pair = pair((CONS)cadar, evlis((CONS)cons.rest, ns));
+					CONS pair = pair((CONS)cadar, evlis((CONS)cons.cdr, ns));
 					CONS append = append(pair, ns);
 					return eval(caddar, append);
 				}
@@ -207,22 +207,22 @@ public class Sigmatism {
 
 		public final static CONS NIL = new CONS(null, null);
 
-		EXPR head;
-		EXPR rest;
+		EXPR car;
+		EXPR cdr;
 
 		public CONS(EXPR head, EXPR rest) {
-			this.head = head;
-			this.rest = rest;
+			this.car = head;
+			this.cdr = rest;
 		}
 
 		public String toString() {
-			if (head == null && rest == null) {
+			if (this.equals(NIL)) {
 				return "()";
 			}
 			String s = "(";
 
-			s += head.toString() + " ";
-			s += rest.toString().replaceFirst("^\\((.*)\\)", "$1");
+			s += car.toString() + " ";
+			s += cdr.toString().replaceFirst("^\\((.*)\\)", "$1");
 			s = s.trim() + ")";
 			return s;
 		}
@@ -231,10 +231,10 @@ public class Sigmatism {
 		public boolean equals(Object o) {
 			if (o instanceof CONS) {
 				CONS s = (CONS) o;
-				return this.head == null 
-						&& this.rest == null 
-						&& s.head == null 
-						&& s.rest == null;
+				return this.car == null 
+						&& this.cdr == null 
+						&& s.car == null 
+						&& s.cdr == null;
 			} else {
 				return false;
 			}
