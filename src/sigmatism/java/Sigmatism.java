@@ -207,8 +207,8 @@ public class Sigmatism {
 
 		public final static CONS NIL = new CONS(null, null);
 
-		EXPR car;
-		EXPR cdr;
+		public final EXPR car;
+		public final EXPR cdr;
 
 		public CONS(EXPR head, EXPR rest) {
 			this.car = head;
