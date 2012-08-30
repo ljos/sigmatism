@@ -38,7 +38,7 @@ public class Sigmatism {
 	
 	private static EXPR assoc(SYMBOL symbol, CONS ns) throws Exception {
 		EXPR caar = ((CONS)ns.head).head;
-		if(ns.head == null && ns.rest == null) {
+		if(ns.equals(CONS.NIL)) {
 			throw new Exception("Symbol not in namespace.");
 		} else if (caar.equals(symbol)) {
 			EXPR cadar = ((CONS)((CONS)ns.head).rest).head;
