@@ -32,74 +32,72 @@ public class Sigmatism {
 	    	}
 	    }
 
-		CONS ns = (CONS)read(file.toString());
+		EXPR ns = read(file.toString());
 		System.out.println(eval(expr, ns).toString());
 	}
 	
-	private static EXPR assoc(SYMBOL symbol, CONS ns) throws Exception {
-		EXPR caar = ((CONS)ns.car).car;
+	private static EXPR assoc(EXPR symbol, EXPR ns) throws Exception {
+		EXPR caar = ns.car().car();
 		if(ns.equals(CONS.NIL)) {
 			throw new Exception("Symbol not in namespace.");
 		} else if (caar.equals(symbol)) {
-			EXPR cadar = ((CONS)((CONS)ns.car).cdr).car;
+			EXPR cadar = ns.car().cdr().car();
 			return cadar;
 		} else {
-			return assoc(symbol, (CONS)ns.cdr);
+			return assoc(symbol, ns.cdr());
 		}
 	}
 	
-	private static EXPR evcon(CONS cons, CONS ns) throws Exception {
-		EXPR caar = ((CONS)cons.car).car;
-		EXPR cadar = ((CONS)((CONS)cons.car).cdr).car;
+	private static EXPR evcon(EXPR cons, EXPR ns) throws Exception {
+		EXPR caar = cons.car().car();
+		EXPR cadar = cons.car().cdr().car();
 		if(eval(caar, ns).equals(SYMBOL.T)) {
 			return eval(cadar, ns);
 		} else {
-			return evcon((CONS)cons.cdr, ns);
+			return evcon(cons.cdr(), ns);
 		}
 	}
 	
-	private static CONS evlis(CONS expr, CONS ns) throws Exception {
+	private static EXPR evlis(EXPR expr, EXPR ns) throws Exception {
 		if (expr.equals(CONS.NIL)) {
 			return CONS.NIL;
 		} else {
-			return new CONS(eval(expr.car, ns), evlis((CONS)expr.cdr, ns));
+			return new CONS(eval(expr.car(), ns), evlis(expr.cdr(), ns));
 		}
 	}
 	
-	private static CONS append(CONS x, CONS y) {
+	private static EXPR append(EXPR x, EXPR y) throws Exception {
 		if (x.equals(CONS.NIL)) {
 			return y;
 		} else {
-			return new CONS(x.car, append((CONS)x.cdr, y));
+			return new CONS(x.car(), append(x.cdr(), y));
 		}
 	}
 	
-	private static CONS pair(CONS x, CONS y) {
+	private static EXPR pair(EXPR x, EXPR y) throws Exception {
 		if (x.equals(CONS.NIL) && y.equals(CONS.NIL)) {
 			return CONS.NIL;
 		} else {
-			EXPR list = new CONS(x.car, new CONS(y.car, CONS.NIL));
-			return new CONS(list, pair((CONS)x.cdr, (CONS)y.cdr));
+			EXPR list = new CONS(x.car(), new CONS(y.car(), CONS.NIL));
+			return new CONS(list, pair(x.cdr(), y.cdr()));
 		}
 	}
 	
 	public static EXPR eval(String expr, String ns) throws Exception {
 		EXPR exp = read(expr);
-		CONS n = (CONS)read(ns);
+		EXPR n = read(ns);
 		return eval(exp, n);
 	}
 	
 
-	private static EXPR eval(EXPR expr, CONS ns) throws Exception {
+	private static EXPR eval(EXPR expr, EXPR ns) throws Exception {
 		if (expr instanceof SYMBOL) {
-			SYMBOL e = (SYMBOL)expr;
-			return assoc(e, ns);
+			return assoc(expr, ns);
 		} else if (expr instanceof CONS) {
-			CONS cons = (CONS) expr;
-			if (cons.car instanceof SYMBOL) {
-				String symbol = cons.car.toString();
-				EXPR cadr = ((CONS)cons.cdr).car;
-				EXPR caddr = ((CONS)((CONS)cons.cdr).cdr).car;
+			if (expr.car() instanceof SYMBOL) {
+				String symbol = expr.car().toString();
+				EXPR cadr = expr.cdr().car();
+				EXPR caddr = expr.cdr().cdr().car();
 				switch (symbol) {
 				case "quote":
 					return cadr;
@@ -110,28 +108,28 @@ public class Sigmatism {
 					return eval(cadr, ns).equals(eval(caddr, ns)) ? 
 							SYMBOL.T : CONS.NIL;
 				case "car":
-					return ((CONS)eval(cadr, ns)).car;
+					return eval(cadr, ns).car();
 				case "cdr":
-					return ((CONS)eval(cadr, ns)).cdr;
+					return eval(cadr, ns).cdr();
 				case "cons":
 					return new CONS(eval(cadr, ns), eval(caddr,ns));
 				case "cond":
-					return evcon((CONS)cons.cdr, ns);
+					return evcon(expr.cdr(), ns);
 				default:
-					EXPR f = assoc((SYMBOL)cons.car, ns);
-					return eval(new CONS(f, cons.cdr), ns);
+					EXPR f = assoc(expr.car(), ns);
+					return eval(new CONS(f, expr.cdr()), ns);
 				}
 			} else {
-				EXPR caar = ((SYMBOL)((CONS)cons.car).car);
-				EXPR caddar = ((CONS)((CONS)((CONS)cons.car).cdr).cdr).car;
-				EXPR cadar = ((CONS)((CONS)cons.car).cdr).car;
+				EXPR caar = expr.car().car();
+				EXPR caddar = expr.car().cdr().cdr().car();
+				EXPR cadar = expr.car().cdr().car();
 				
 				if (caar.equals(SYMBOL.label)) {
-					CONS list = new CONS(cadar, new CONS(cons.car, CONS.NIL)); 
-					return eval(new CONS(caddar, cons.cdr), new CONS(list, ns));
+					CONS list = new CONS(cadar, new CONS(expr.car(), CONS.NIL)); 
+					return eval(new CONS(caddar, expr.cdr()), new CONS(list, ns));
 				} else if (caar.equals(SYMBOL.lambda)) {
-					CONS pair = pair((CONS)cadar, evlis((CONS)cons.cdr, ns));
-					CONS append = append(pair, ns);
+					EXPR pair = pair(cadar, evlis(expr.cdr(), ns));
+					EXPR append = append(pair, ns);
 					return eval(caddar, append);
 				}
 			}
@@ -175,6 +173,13 @@ public class Sigmatism {
 	}
 
 	private static abstract class EXPR {
+		public EXPR car() throws Exception {
+			throw new Exception("Cannot call car on EXPR that is not a CONS: " + this.toString());
+		}
+		
+		public EXPR cdr() throws Exception {
+			throw new Exception("Cannot call cdr on EXPR that is not a CONS: " + this.toString());
+		}
 	}
 
 	private static class SYMBOL extends EXPR {
@@ -207,12 +212,21 @@ public class Sigmatism {
 
 		public final static CONS NIL = new CONS(null, null);
 
-		public final EXPR car;
-		public final EXPR cdr;
+		private final EXPR car;
+		private final EXPR cdr;
 
 		public CONS(EXPR head, EXPR rest) {
 			this.car = head;
 			this.cdr = rest;
+		}
+		
+		
+		public EXPR car() {
+			return car;
+		}
+		
+		public EXPR cdr() {
+			return cdr;
 		}
 
 		public String toString() {
