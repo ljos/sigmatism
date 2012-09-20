@@ -9,3 +9,5 @@
 
 bin/*
 *.log
+
+/target/
