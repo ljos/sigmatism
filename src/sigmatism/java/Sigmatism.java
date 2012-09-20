@@ -9,7 +9,7 @@ public class Sigmatism {
 	 * @param args
 	 *            lisp source file. lisp namespace file.
 	 * 
-	 *            Sigmatism takes source file and and a namespace file with any
+	 *            Sigmatism takes source file and a namespace file with any
 	 *            additional defined functions.
 	 */
 	public static void main(String[] args) throws Exception {
