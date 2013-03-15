@@ -1,4 +1,4 @@
-(ns sigmatism.clj.core
+(ns sigmatism.clj.sigmatism
   (:refer-clojure :exclude [eval atom assoc not]))
 
 (defn eq [x y]
