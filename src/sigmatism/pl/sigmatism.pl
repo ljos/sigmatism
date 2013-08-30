@@ -34,9 +34,6 @@ pair([Key | Keys], [Arg | Args], Ns, Namespace) :-
     put_assoc(Key, Ns, Arg, Assoc),
     pair(Keys, Args, Assoc, Namespace).
 
-eval_lisp(AST, Value) :-
-    list_to_assoc([], Assoc),
-    eval_lisp(AST, Assoc, Value).
 eval_lisp(AST, Ns,Value) :-
     atom(AST),
     get_assoc(AST, Ns, Value).
@@ -78,6 +75,7 @@ repl :-
     read_line_to_codes(Stream, String),
     maplist(char_code, Chars, String),
     read_lisp(Chars, AST),
-    eval_lisp(AST, V),
+    list_to_assoc([], Namespace),
+    eval_lisp(AST, Namespace, V),
     writeln(V),
     repl.
