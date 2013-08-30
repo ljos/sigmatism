@@ -18,8 +18,9 @@ read_lisp(String, AST) :-
     phrase((cons(AST) ; symbol(AST)), String).
 
 evcon([[F, S] | _], Ns, Value) :-
-    eval(F, Ns, _),
-    eval(S, Ns, Value).
+    eval_lisp(F, Ns, B),
+    B \= nil,
+    eval_lisp(S, Ns, Value).
 evcon([_ | R], Ns, Value) :-
     evcon(R, Ns, Value).
 
