@@ -34,7 +34,7 @@ pair([Key | Keys], [Arg | Args], Ns, Namespace) :-
     put_assoc(Key, Ns, Arg, Assoc),
     pair(Keys, Args, Assoc, Namespace).
 
-eval_lisp(AST, Ns,Value) :-
+eval_lisp(AST, Ns, Value) :-
     atom(AST),
     get_assoc(AST, Ns, Value).
 eval_lisp([quote, Q], _, Q).
@@ -69,6 +69,21 @@ eval_lisp([H | T], Ns, Value) :-
     get_assoc(H, Ns, E),
     eval_lisp([E | T], Ns, Value).
 
+insert_space([H], [H]).
+insert_space([H | T], [H, ' ' | R]) :-
+    insert_space(T, R).
+
+writeln_lisp(L) :-
+    write_lisp(L), nl.
+write_lisp(A) :-
+    atom(A),
+    write(A).
+write_lisp(L) :-
+    write('('),
+    insert_space(L, P),
+    maplist(write_lisp, P),
+    write(')').
+
 repl :-
     prompt1('lambda> '),
     current_input(Stream),
@@ -77,5 +92,5 @@ repl :-
     read_lisp(Chars, AST),
     list_to_assoc([], Namespace),
     eval_lisp(AST, Namespace, V),
-    writeln(V),
+    writeln_lisp(V),
     repl.
