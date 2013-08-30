@@ -2,16 +2,16 @@
 Implementations of John McCarthys 1960 Lisp in different programming languages.
 
 ## To do
-[X] Java
+- [X] Java
 
-[X] Clojure
+- [X] Clojure
 
-[ ] Haskell
+- [X] Haskell
 
-[ ] Prolog
+- [X] Prolog
 
-[ ] Objective C
+- [ ] Objective C
 
-[ ] Python
+- [ ] Python
 
-[ ] Javascript
+- [ ] Javascript
