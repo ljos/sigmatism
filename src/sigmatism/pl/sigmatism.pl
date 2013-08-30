@@ -11,6 +11,7 @@ rest([S]) --> symbol(S).
 rest([C | R]) --> cons(C), [' '], rest(R).
 rest([S1 | S2]) --> symbol(S1), [' '] , rest(S2).
 
+cons([]) --> ['(',')'].
 cons(Elems) --> ['('], rest(Elems), [')'].
 
 read_lisp(String, AST) :-
