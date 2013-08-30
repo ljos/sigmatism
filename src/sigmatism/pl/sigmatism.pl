@@ -1,10 +1,13 @@
-parens_or_space(S) :- S = '(' ; S = ')'; S = ' '.
+ char(C, [C|A], A) :-
+    char_type(C, alnum); char_type(C, period); char_type(C, quote).
+
+chars([C]) --> char(C).
+chars([C|Cs]) --> char(C), chars(Cs).
 
 symbol(Symbol, A, R) :-
     append(S, R, A),
-    include(parens_or_space, S, []),
-    maplist(atom_char, S, String),
-    atom_chars(Symbol, String).
+    phrase(chars(Cs), S),
+    atom_chars(Symbol, Cs).
 
 rest([C]) --> cons(C).
 rest([S]) --> symbol(S).
