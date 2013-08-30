@@ -58,7 +58,7 @@ eval_lisp([cons, F, S], Ns, [V1 | V2]) :-
     eval_lisp(S, Ns, V2).
 eval_lisp([cond | R], Ns, Value) :-
     evcon(R, Ns, Value).
-eval_lisp([[label, Name | Lambda] | Args], Ns, Value) :-
+eval_lisp([[label, Name, Lambda] | Args], Ns, Value) :-
     put_assoc(Name, Ns, [label, Name | Lambda], Assoc),
     eval_lisp([Lambda | Args], Assoc, Value).
 eval_lisp([[lambda, LArgs, Body] | Rest], Ns, Value) :-
