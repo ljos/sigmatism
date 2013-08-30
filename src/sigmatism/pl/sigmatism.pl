@@ -1,4 +1,4 @@
- char(C, [C|A], A) :-
+char(C, [C|A], A) :-
     char_type(C, alnum); char_type(C, period); char_type(C, quote).
 
 chars([C]) --> char(C).
