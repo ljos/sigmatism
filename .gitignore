@@ -11,3 +11,4 @@ bin/*
 *.log
 
 /target/
+/.lein-repl-history
