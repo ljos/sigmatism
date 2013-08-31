@@ -52,4 +52,4 @@
       (eval)
       (println))
   (flush)
-  (repl))
+  (recur))
