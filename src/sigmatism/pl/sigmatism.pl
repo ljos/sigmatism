@@ -1,5 +1,7 @@
 char(C, [C|A], A) :-
-    char_type(C, alnum); char_type(C, period); char_type(C, quote).
+    char_type(C, alnum);
+    char_type(C, period);
+    char_type(C, quote).
 
 chars([C]) --> char(C).
 chars([C|Cs]) --> char(C), chars(Cs).
@@ -37,9 +39,6 @@ pair([Key | Keys], [Arg | Args], Ns, Namespace) :-
     put_assoc(Key, Ns, Arg, Assoc),
     pair(Keys, Args, Assoc, Namespace).
 
-eval_lisp(AST, Ns, Value) :-
-    atom(AST),
-    get_assoc(AST, Ns, Value).
 eval_lisp([quote, Q], _, Q).
 eval_lisp([atom, A], Ns, t) :-
     eval_lisp(A, Ns, Value),
@@ -71,13 +70,14 @@ eval_lisp([[lambda, LArgs, Body] | Rest], Ns, Value) :-
 eval_lisp([H | T], Ns, Value) :-
     get_assoc(H, Ns, E),
     eval_lisp([E | T], Ns, Value).
+eval_lisp(AST, Ns, Value) :-
+    atom(AST),
+    get_assoc(AST, Ns, Value).
 
 insert_space([H], [H]).
 insert_space([H | T], [H, ' ' | R]) :-
     insert_space(T, R).
 
-writeln_lisp(L) :-
-    write_lisp(L), nl.
 write_lisp(A) :-
     atom(A),
     write(A).
@@ -95,5 +95,5 @@ repl :-
     read_lisp(Chars, AST),
     list_to_assoc([], Namespace),
     eval_lisp(AST, Namespace, V),
-    writeln_lisp(V),
+    write_lisp(V), nl,
     repl.
