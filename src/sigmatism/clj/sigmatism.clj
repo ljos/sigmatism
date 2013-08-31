@@ -44,3 +44,12 @@
                       (interleave largs)
                       (apply (partial assoc a))
                       (eval body))))))))
+
+(defn repl []
+  (print "lambda> ")
+  (flush)
+  (-> (read)
+      (eval)
+      (println))
+  (flush)
+  (repl))
