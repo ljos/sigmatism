@@ -3,9 +3,9 @@
 
 (defn eq [x y]
   (cond (and (= x '()) (= y '()))
-        't    
+        't
         (and (symbol? x) (symbol? y) (= x y))
-        't     
+        't
         :else
         '()))
 
@@ -43,7 +43,7 @@
 (defn pair [x y]
   (cond (and (= 't (null x)) (= 't (null y)))
         '()
-        
+
         (and (= 't (not (atom x))) (= 't (not (atom y))))
         (cons (list (first x) (first y))
               (pair (rest x) (rest y)))))
@@ -55,30 +55,29 @@
           (evlis (rest m) a))))
 
 (defn eval [e a]
-  (cond (= 't (atom e))
-        (assoc e a)
-        
-        (= 't (atom (first e)))
-        (cond
-         (= 't (eq (first e) 'quote)) (fnext e)
-         (= 't (eq (first e) 'atom))  (atom (eval (fnext e) a))
-         (= 't (eq (first e) 'eq))    (eq (eval (fnext e) a)
-                                          (eval (first (nnext e)) a))
-         (= 't (eq (first e) 'car))   (first (eval (fnext e) a))
-         (= 't (eq (first e) 'cdr))   (rest (eval (fnext e) a))
-         (= 't (eq (first e) 'cons))  (cons (eval (fnext e) a)
-                                            (eval (first (nnext e)) a))
-         (= 't (eq (first e) 'cond))  (evcon (rest e) a)
-         :else
-         (eval (cons (assoc (first e) a)
-                     (rest e))
-               a))
-        
-        (= 't (eq (ffirst e) 'label))
-        (eval (cons (-> e first nnext first) (rest e))
-              (cons (list (-> e first fnext) (first e)) a))
+  (let [[fun & args] e]
+    (cond (= 't (atom e))
+          (assoc e a)
 
-        (= 't (eq (ffirst e) 'lambda))
-        (eval (-> e first nnext first)
-              (append (pair (-> e first fnext) (evlis (rest e) a))
-                      a))))
+          (= 't (atom fun))
+          (cond
+           (= fun 'quote) (first args)
+           (= fun 'atom)  (atom (eval (first args) a))
+           (= fun 'eq)    (eq (eval (first args) a)
+                              (eval (second args) a))
+           (= fun 'car)   (first (eval (first args) a))
+           (= fun 'cdr)   (rest (eval (first args) a))
+           (= fun 'cons)  (cons (eval (first args) a)
+                                (eval (second args) a))
+           (= fun 'cond)  (evcon args a)
+           :else
+           (eval (cons (assoc fun a) args) a))
+
+          (= (first fun) 'label)
+          (let [[name body] (rest fun)]
+            (eval (cons body args)
+                  (cons (list name fun) a)))
+
+          (= (first fun) 'lambda)
+          (let [[largs body] fun]
+            (eval body (append (pair largs (evlis args a)) a))))))
