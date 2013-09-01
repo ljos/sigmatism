@@ -1,250 +1,198 @@
 package sigmatism.java;
 
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Stack;
 
-public class Sigmatism {
+public class Sigmatism2 {
 
-	/**
-	 * @param args
-	 *            lisp source file. lisp namespace file.
-	 * 
-	 *            Sigmatism takes source file and a namespace file with any
-	 *            additional defined functions.
-	 */
-	public static void main(String[] args) throws Exception {
-		StringBuilder file = new StringBuilder();
-		String NL = System.getProperty("line.separator");
-		try (Scanner scanner = new Scanner(new FileInputStream(args[0]))) {
-			while (scanner.hasNextLine()) {
-				file.append(scanner.nextLine() + NL);
-			}
-		}
+    public static Object read(Reader reader) throws IOException {
+	int c = reader.read();
+	Stack<List<Object>> depth = new Stack<>();
+	Object expr = null;
 
-		EXPR expr = read(file.toString());
-
-		file = new StringBuilder();
-		try (Scanner scanner = new Scanner(new FileInputStream(args[0]))) {
-			while (scanner.hasNextLine()) {
-				file.append(scanner.nextLine() + NL);
-			}
-		}
-
-		EXPR ns = read(file.toString());
-		System.out.println(eval(expr, ns).toString());
-	}
-
-	private static EXPR assoc(EXPR symbol, EXPR ns) throws Exception {
-		EXPR caar = ns.car().car();
-		if (ns.equals(CONS.NIL)) {
-			throw new Exception("Symbol not in namespace.");
-		} else if (caar.equals(symbol)) {
-			EXPR cadar = ns.car().cdr().car();
-			return cadar;
+	StringBuilder stringBuilder = new StringBuilder();
+	while (c != -1) {
+	    switch (c) {
+	    case '(':
+		List<Object> l = new LinkedList<>();
+		List<Object> current;
+		if (!depth.isEmpty()) {
+		    current = depth.peek();
+		    current.add(l);
 		} else {
-			return assoc(symbol, ns.cdr());
+		    current = l;
 		}
-	}
 
-	private static EXPR evcon(EXPR cons, EXPR ns) throws Exception {
-		EXPR caar = cons.car().car();
-		EXPR cadar = cons.car().cdr().car();
-		if (eval(caar, ns).equals(SYMBOL.T)) {
-			return eval(cadar, ns);
-		} else {
-			return evcon(cons.cdr(), ns);
+		if (stringBuilder.length() > 0) {
+		    current.add(stringBuilder.toString());
+		    stringBuilder = new StringBuilder();
 		}
-	}
-
-	private static EXPR evlis(EXPR expr, EXPR ns) throws Exception {
-		if (expr.equals(CONS.NIL)) {
-			return CONS.NIL;
-		} else {
-			return new CONS(eval(expr.car(), ns), evlis(expr.cdr(), ns));
+		depth.push(l);
+		break;
+	    case ')':
+		List<Object> list = depth.pop();
+		if (stringBuilder.length() > 0) {
+		    list.add(stringBuilder.toString());
+		    stringBuilder = new StringBuilder();
 		}
-	}
-
-	private static EXPR append(EXPR x, EXPR y) throws Exception {
-		if (x.equals(CONS.NIL)) {
-			return y;
-		} else {
-			return new CONS(x.car(), append(x.cdr(), y));
+		expr = list;
+		break;
+	    case ' ':
+		if (depth.empty()) {
+		    break;
 		}
-	}
-
-	private static EXPR pair(EXPR x, EXPR y) throws Exception {
-		if (x.equals(CONS.NIL) && y.equals(CONS.NIL)) {
-			return CONS.NIL;
-		} else {
-			EXPR list = new CONS(x.car(), new CONS(y.car(), CONS.NIL));
-			return new CONS(list, pair(x.cdr(), y.cdr()));
+		if (stringBuilder.length() > 0) {
+		    depth.peek().add(stringBuilder.toString());
+		    stringBuilder = new StringBuilder();
 		}
+		break;
+	    default:
+		stringBuilder.append((char) c);
+	    }
+	    c = reader.read();
 	}
 
-	public static EXPR eval(String expr, String ns) throws Exception {
-		EXPR exp = read(expr);
-		EXPR n = read(ns);
-		return eval(exp, n);
+	if (stringBuilder.length() > 0) {
+	    return stringBuilder.toString();
+	} else {
+	    return expr;
 	}
+    }
 
-	private static EXPR eval(EXPR expr, EXPR ns) throws Exception {
-		if (expr instanceof SYMBOL) {
-			return assoc(expr, ns);
-		} else if (expr.car() instanceof SYMBOL) {
-			String symbol = expr.car().toString();
-			EXPR cadr = expr.cdr().car();
-			EXPR caddr = expr.cdr().cdr().car();
-			switch (symbol) {
-			case "quote":
-				return cadr;
-			case "atom":
-				return eval(cadr, ns) instanceof SYMBOL ? SYMBOL.T : CONS.NIL;
-			case "eq":
-				return eval(cadr, ns).equals(eval(caddr, ns)) ? SYMBOL.T
-						: CONS.NIL;
-			case "car":
-				return eval(cadr, ns).car();
-			case "cdr":
-				return eval(cadr, ns).cdr();
-			case "cons":
-				return new CONS(eval(cadr, ns), eval(caddr, ns));
-			case "cond":
-				return evcon(expr.cdr(), ns);
-			default:
-				EXPR f = assoc(expr.car(), ns);
-				return eval(new CONS(f, expr.cdr()), ns);
+    @SuppressWarnings("unchecked")
+    public static Object eval(Object e, Map<String, Object> ns) {
+	if (e instanceof String) {
+	    String s = (String) e;
+	    return ns.get(s);
+	} else if (e instanceof List) {
+	    List<Object> list = (List<Object>) e;
+	    Object first = list.get(0);
+
+	    Object arg1;
+	    Object arg2;
+
+	    if (first instanceof String) {
+		String symbol = (String) first;
+		switch (symbol) {
+		case "quote":
+		    return list.get(1);
+		case "atom":
+		    Object ans = eval(list.get(1), ns);
+		    return ans instanceof String ? "t" : "nil";
+		case "eq":
+		    arg1 = eval(list.get(1), ns);
+		    arg2 = eval(list.get(2), ns);
+		    if (arg1 instanceof String) {
+			return arg1.equals(arg2) ? "t" : "nil";
+		    }
+		    return "nil";
+		case "car":
+		    arg1 = eval(list.get(1), ns);
+		    return ((List<Object>) arg1).get(0);
+		case "cdr":
+		    arg1 = eval(list.get(1), ns);
+
+		    List<Object> cons = (List<Object>) arg1;
+		    cons.remove(0);
+		    return cons;
+		case "cons":
+		    List<Object> c = new LinkedList<>();
+		    c.add(eval(list.get(1), ns));
+		    arg2 = eval(list.get(2), ns);
+		    if (arg2 instanceof List) {
+			c.addAll((List<Object>)arg2);
+		    } else {
+			c.add(arg2);
+		    }
+		    return c;
+		case "cond":
+		    List<Object> args = new LinkedList<>(list);
+		    args.remove(0);
+		    for (Object o : args) {
+			List<Object> con = (List<Object>) o;
+			if (!eval(con.get(0), ns).equals("nil")) {
+			    return eval(con.get(1), ns);
 			}
-		} else {
-			EXPR caar = expr.car().car();
-			EXPR caddar = expr.car().cdr().cdr().car();
-			EXPR cadar = expr.car().cdr().car();
-
-			if (caar.equals(SYMBOL.label)) {
-				CONS list = new CONS(cadar, new CONS(expr.car(), CONS.NIL));
-				return eval(new CONS(caddar, expr.cdr()), new CONS(list, ns));
-			} else if (caar.equals(SYMBOL.lambda)) {
-				EXPR pair = pair(cadar, evlis(expr.cdr(), ns));
-				EXPR append = append(pair, ns);
-				return eval(caddar, append);
-			}
+		    }
+		    break;
+		default:
+		    return eval(list.set(0, ns.get(first)), ns);
 		}
+	    } else if (first instanceof List) {
+		List<Object> fun = (List<Object>) first;
 
-		throw new Exception("Unknown input.");
+		String symbol = (String) fun.get(0);
+		if (symbol.equals("label")) {
+		    String name = (String) fun.get(1);
+		    Object body = fun.get(2);
+		    Map<String, Object> ns2 = new HashMap<>(ns);
+		    ns2.put(name, fun);
+		    List<Object> l = new LinkedList<Object>();
+		    l.add(body);
+		    List<Object> args = list.subList(1, list.size());
+		    l.addAll(args);
+		    return eval(l, ns2);
+		} else if (symbol.equals("lambda")) {
+		    List<Object> largs = (List<Object>) fun.get(1);
+		    List<Object> args = list.subList(1, list.size());
+
+		    Map<String, Object> ns2 = new HashMap<>(ns);
+		    for(int i = 0; i < args.size(); i++) {
+			Object arg = args.get(i);
+			arg = eval(arg, ns);
+			String larg = (String)largs.get(0);
+			ns2.put(larg, arg);
+		    }
+		    
+		    return eval(fun.get(2), ns2);
+		}
+	    }
 	}
 
-	private static String symbol = "[a-z]+[a-z0-9_-]*";
-	// private static String cons = "^\\(.*\\)$";
-	private static String nil = "\\(\\)";
-
-	private static EXPR read(String source) {
-		source = source.replaceAll("\\s+", " ").trim();
-		if (source.matches(nil) || source.isEmpty()) {
-			return CONS.NIL;
-		}
-		if (source.matches(symbol)) {
-			return new SYMBOL(source);
-		}
-		if (source.startsWith("(")) {
-			int i = 1;
-			for (int j = 1; j > 0; ++i) {
-				if (source.charAt(i) == '(') {
-					++j;
-				} else if (source.charAt(i) == ')') {
-					--j;
-				}
-			}
-
-			if (i == source.length()) {
-				return read(source.replaceFirst("^\\((.*)\\)", "$1 ()"));
-			}
-			EXPR car = read(source.substring(0, i));
-			EXPR cdr = read(source.substring(i));
-			return new CONS(car, cdr);
-		}
-		EXPR car = read(source.replaceFirst("(" + symbol + ").+", "$1"));
-		EXPR cdr = read(source.replaceFirst(symbol + "\\s(.+)", "$1"));
-		return new CONS(car, cdr);
+	return null;
+    }
+    
+    public static void print(Object e) {
+	if (e instanceof String) {
+	    System.out.print(e);
+	} else {
+	    @SuppressWarnings("unchecked")
+	    List<Object> list = (List<Object>) e;
+	    System.out.print("(");
+	    print(list.get(0));
+	    list.remove(0);
+	    for(Object o : list) {
+		System.out.print(" ");
+		print(o);
+	    }
+	    System.out.print(")");
 	}
+    }
 
-	private static abstract class EXPR {
-		public EXPR car() throws Exception {
-			throw new Exception("Cannot call car on EXPR that is not a CONS: "
-					+ this.toString());
-		}
-
-		public EXPR cdr() throws Exception {
-			throw new Exception("Cannot call cdr on EXPR that is not a CONS: "
-					+ this.toString());
-		}
+    public static void repl() throws IOException {
+	@SuppressWarnings("resource")
+	Scanner scanner =  new Scanner(System.in);
+	for(;;) {
+	    System.out.print("lambda> ");
+	    System.out.flush();
+	    String input = scanner.nextLine();
+	    Object read = read(new StringReader(input));
+	    Object eval = eval(read, new HashMap<String, Object>());
+	    print(eval);
+	    System.out.println();
+	    System.out.flush();
 	}
+    }
 
-	private static class SYMBOL extends EXPR {
-		public final String symbol;
+    public static void main(String[] args) throws IOException {
+	repl();
+    }
 
-		public final static SYMBOL T = new SYMBOL("t");
-		public final static SYMBOL label = new SYMBOL("label");
-		public final static SYMBOL lambda = new SYMBOL("lambda");
-
-		public SYMBOL(String s) {
-			symbol = s.trim();
-		}
-
-		public String toString() {
-			return symbol;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof SYMBOL) {
-				SYMBOL s = (SYMBOL) o;
-				return this.symbol.equals(s.symbol);
-			} else {
-				return false;
-			}
-		}
-	}
-
-	private static class CONS extends EXPR {
-
-		public final static CONS NIL = new CONS(null, null);
-
-		private final EXPR car;
-		private final EXPR cdr;
-
-		public CONS(EXPR head, EXPR rest) {
-			this.car = head;
-			this.cdr = rest;
-		}
-
-		public EXPR car() {
-			return car;
-		}
-
-		public EXPR cdr() {
-			return cdr;
-		}
-
-		public String toString() {
-			if (this.equals(NIL)) {
-				return "()";
-			}
-			String s = "(";
-
-			s += car.toString() + " ";
-			s += cdr.toString().replaceFirst("^\\((.*)\\)", "$1");
-			s = s.trim() + ")";
-			return s;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof CONS) {
-				CONS s = (CONS) o;
-				return this.car == null && this.cdr == null && s.car == null
-						&& s.cdr == null;
-			} else {
-				return false;
-			}
-		}
-	}
 }
