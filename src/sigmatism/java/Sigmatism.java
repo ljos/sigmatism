@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 
-public class Sigmatism2 {
+public class Sigmatism {
 
     public static Object read(Reader reader) throws IOException {
 	int c = reader.read();
